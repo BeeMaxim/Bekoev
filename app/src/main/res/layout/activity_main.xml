@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -8,17 +9,52 @@
         android:id="@+id/text"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_weight="4"
         android:gravity="center"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_weight="4"/>
+        android:textStyle="bold" />
 
-    <ImageView
-        android:id="@+id/gif"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:layout_weight="2"/>
+        android:layout_weight="2">
+
+        <ImageView
+            android:id="@+id/gif"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+
+        <LinearLayout
+            android:id="@+id/error_page"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:visibility="invisible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/error_text" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/darker_gray"
+                android:onClick="loadGif"
+                android:text="@string/update_button" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="invisible" />
+
+
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,19 +63,23 @@
         android:orientation="horizontal">
 
         <Button
-            android:text="back"
+            android:id="@+id/back_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="back"/>
+            android:background="@android:color/holo_orange_light"
+            android:onClick="back"
+            android:text="@string/back_button"
+            tools:ignore="NestedWeights" />
 
         <Button
-            android:id="@+id/nextButton"
-            android:text="next"
+            android:id="@+id/next_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="next"/>
+            android:background="@android:color/holo_green_light"
+            android:onClick="next"
+            android:text="@string/next_button" />
 
     </LinearLayout>
 

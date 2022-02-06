@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">GifLoader</string>
-    <string name="get">get</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="error_text">Не удалось загрузить GIF</string>
+    <string name="update_button">обновить</string>
+    <string name="back_button">назад</string>
+    <string name="next_button">следующий</string>
 </resources>

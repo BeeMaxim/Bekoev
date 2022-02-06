@@ -1,5 +1,6 @@
 package com.example.gifloader;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
@@ -8,11 +9,17 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -28,57 +35,118 @@ public class MainActivity extends AppCompatActivity {
 
     private final List<String> urls = new ArrayList<>();
     private final List<String> descriptions = new ArrayList<>();
-    private int currentPosition = -1;
-    private String jsonString = "";
+    private int mCurrentPosition = 0;
+    private String mJsonString = "";
+    private Button mBackButton;
+    private Button mNextButton;
+    private ImageView mGif;
+    private TextView mText;
+    private LinearLayout mErrorPage;
+    private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = findViewById(R.id.nextButton);
+        mNextButton = findViewById(R.id.next_button);
+        mBackButton = findViewById(R.id.back_button);
+        mGif = findViewById(R.id.gif);
+        mText = findViewById(R.id.text);
+        mErrorPage = findViewById(R.id.error_page);
+        mProgressBar = findViewById(R.id.progress_bar);
+
+        setButtons(false, false);
         try {
-            next(button);
-        } catch (IOException | InterruptedException | JSONException e) {
+            loadGif();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private void setImage(String gifAddress, String description) {
-        ImageView gif = findViewById(R.id.gif);
-        TextView text = findViewById(R.id.text);
-        text.setText(description);
-        Glide.with(this)
-                .asGif()
-                .load(gifAddress)
-                .placeholder(new ColorDrawable(Color.WHITE))
-                .error(new ColorDrawable(Color.WHITE))
-                .into(gif);
-    }
-
-    public void next(View view) throws IOException, InterruptedException, JSONException {
-        String gifAddress;
-        String description;
-        ++currentPosition;
-        if (currentPosition == urls.size()) {
-            getJSON();
-            gifAddress = getGifAddress();
-            description = getDescription();
-            urls.add(gifAddress);
-            descriptions.add(description);
+    public void next(View view) throws InterruptedException {
+        ++mCurrentPosition;
+        setButtons(false, false);
+        if (mCurrentPosition == urls.size()) {
+            loadGif();
         } else {
-            gifAddress = urls.get(currentPosition);
-            description = descriptions.get(currentPosition);
+            String gifAddress = urls.get(mCurrentPosition);
+            String description = descriptions.get(mCurrentPosition);
+            setImage(gifAddress, description);
         }
-        setImage(gifAddress, description);
     }
 
     public void back(View view) {
-        if (currentPosition >= 1) {
-            --currentPosition;
-            String gifAddress = urls.get(currentPosition);
-            String description = descriptions.get(currentPosition);
+        setButtons(false, false);
+        if (mCurrentPosition >= 1) {
+            --mCurrentPosition;
+            setButtons(true, false);
+            String gifAddress = urls.get(mCurrentPosition);
+            String description = descriptions.get(mCurrentPosition);
             setImage(gifAddress, description);
         }
+    }
+
+    public void loadGif() throws InterruptedException {
+        mJsonString = "";
+        getJSON();
+        if (mJsonString.equals("")) {
+            setErrorPage();
+            return;
+        }
+        try {
+            String gifAddress = getGifAddress();
+            String description = getDescription();
+            urls.add(gifAddress);
+            descriptions.add(description);
+            setImage(gifAddress, description);
+        } catch (Exception e) {
+            setErrorPage();
+        }
+    }
+
+    public void loadGif(View view) throws InterruptedException {
+        loadGif();
+    }
+
+    private void setButtons(boolean isBackButton, boolean isNextButton) {
+        mBackButton.setEnabled(isBackButton);
+        mNextButton.setEnabled(isNextButton);
+    }
+
+    private void setImage(String gifAddress, String description) {
+        mErrorPage.setVisibility(View.INVISIBLE);
+        mGif.setVisibility(View.VISIBLE);
+        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+        mText.setText(description);
+        setButtons(false, false);
+
+        Glide.with(this)
+                .asGif()
+                .load(gifAddress)
+                .listener(new RequestListener<GifDrawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<GifDrawable> target, boolean isFirstResource) {
+                        setErrorPage();
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(GifDrawable resource, Object model, Target<GifDrawable> target, DataSource dataSource, boolean isFirstResource) {
+                        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                        setButtons(mCurrentPosition > 0, true);
+                        return false;
+                    }
+                })
+                .placeholder(new ColorDrawable(Color.WHITE))
+                .into(mGif);
+    }
+
+    private void setErrorPage() {
+        setButtons(mCurrentPosition > 0, mCurrentPosition + 1 < urls.size());
+        mGif.setVisibility(View.INVISIBLE);
+        mProgressBar.setVisibility(View.INVISIBLE);
+        mErrorPage.setVisibility(View.VISIBLE);
+        mText.setText("");
     }
 
     private void LoadJSON() throws IOException {
@@ -91,18 +159,18 @@ public class MainActivity extends AppCompatActivity {
             stringBuilder.append(line).append("\n");
         }
         bufferedReader.close();
-        jsonString = stringBuilder.toString();
+        mJsonString = stringBuilder.toString();
     }
 
     private String getGifAddress() throws org.json.JSONException {
-        JSONObject json = new JSONObject(jsonString);
+        JSONObject json = new JSONObject(mJsonString);
         return json.get("gifURL").toString();
     }
 
     private String getDescription() {
         String description = "";
         try {
-            JSONObject json = new JSONObject(jsonString);
+            JSONObject json = new JSONObject(mJsonString);
             description = json.get("description").toString();
         } catch (Exception ignored) {
         }
